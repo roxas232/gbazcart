@@ -1,7 +1,9 @@
 #ifdef _MSC_VER
 #define PACK4
+#define ALIGN4
 #else
 #define PACK4 __attribute__((packed, aligned(4)))
+#define ALIGN4 __attribute__((aligned(4)))
 #endif
 
 #include "car.h"
@@ -59,9 +61,14 @@ typedef tile_8bpp tile_block[256];
 #define object_palette_mem	((volatile rgb15*)(MEM_PAL + 0x200))
 #define bg_palette_mem		((volatile rgb15*)(MEM_PAL))
 
-//#define BG_TILES_LEN SCREEN_HEIGHT * SCREEN_WIDTH / 8
-#define BG_TILES_LEN 1
+#define BG_TILES_LEN SCREEN_HEIGHT * SCREEN_WIDTH / 16
+//#define BG_TILES_LEN 1
 #define BG_PAL_LEN 8
+
+const unsigned short bgPal[4] ALIGN4 =
+{
+	0x4DA0,0x0000,0xFFFF,0x0000,
+};
 
 // Form a 16-bit BGR GBA color from 3 component vals
 static inline rgb15 RGB15(int r, int g, int b)
@@ -86,38 +93,33 @@ static inline int clamp(int value, int min, int max)
 
 static inline void loadCar()
 {
-    memcpy(object_palette_mem, carPal,  carPalLen);
-    memcpy(&tile_mem[4][1], carTiles, carTilesLen);
+    memcpy((void*)object_palette_mem, carPal,  carPalLen);
+    memcpy((void*)&tile_mem[4][1], carTiles, carTilesLen);
 }
 
 static inline void drawBg()
 {
 	REG_BG0_CONTROL = 0x0180;// 0000 0001 1000 0000;
 
-	const unsigned short bgPal[4] PACK4 =
-	{
-		0x4DA0,0x0000,0xFFFF,0x0000,
-	};
-
-	memcpy(bg_palette_mem, bgPal, BG_PAL_LEN);
+	memcpy((void*)bg_palette_mem, bgPal, BG_PAL_LEN);
 	uint16 tile[BG_TILES_LEN];
 	for (int i = 0; i < BG_TILES_LEN; ++i)
 	{
 		tile[i] = 0x0101; // Some color
 	}
-	memcpy(tile_mem[1], tile, BG_TILES_LEN);
+	memcpy((void*)tile_mem[1], tile, BG_TILES_LEN);
 }
 
 inline void vsync()
 {
     // Skip past the rest of any current VBlank, then skip VDraw
     while (REG_DISPLAY_VCOUNT >= 160);
-    while(REG_DISPLAY_VCOUNT < 160);
+    while (REG_DISPLAY_VCOUNT < 160);
 }
 
 int main()
 {
-	//drawBg();
+	drawBg();
 	loadCar();
 
 	// Create our sprites by writing their object attributes into OAM
@@ -173,36 +175,6 @@ int main()
 		{
 			set_object_position(paddle_attrs, player_x, player_y);
 		}
-
-		//int ball_max_clamp_x = SCREEN_WIDTH - ball_width;
-		//int ball_max_clamp_y = SCREEN_HEIGHT - ball_height;
-		//// Shit collision code
-		//if ((ball_x >= player_x &&
-		//	ball_x <= player_x + player_width) &&
-		//	(ball_y >= player_y &&
-		//	ball_y <= player_y + player_height))
-		//{
-		//	// Get it out of the paddle
-		//	ball_x = player_x + player_width;
-		//	// Bounce it
-		//	ball_velocity_x = -ball_velocity_x;
-		//}
-		//else
-		//{
-		//	// Bounce off walls
-		//	if (ball_x == 0 || ball_x == ball_max_clamp_x)
-		//	{
-		//		ball_velocity_x = -ball_velocity_x;
-		//	}
-		//	if (ball_y == 0 || ball_y == ball_max_clamp_y)
-		//	{
-		//		ball_velocity_y = -ball_velocity_y;
-		//	}
-		//}
-		//
-		//ball_x = clamp(ball_x + ball_velocity_x, 0, ball_max_clamp_x);
-		//ball_y = clamp(ball_y + ball_velocity_y, 0, ball_max_clamp_y);
-		//set_object_position(ball_attrs, ball_x, ball_y);
 	}
 
 	return 0;
