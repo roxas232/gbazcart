@@ -100,7 +100,7 @@ static inline void drawBg()
 	};
 
 	memcpy(bg_palette_mem, bgPal, BG_PAL_LEN);
-	uint8 tile[BG_TILES_LEN];
+	uint16 tile[BG_TILES_LEN];
 	for (int i = 0; i < BG_TILES_LEN; ++i)
 	{
 		tile[i] = 0x0101; // Some color
