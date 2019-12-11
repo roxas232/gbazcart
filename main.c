@@ -99,13 +99,13 @@ static inline void loadCar()
 
 static inline void drawBg()
 {
-	REG_BG0_CONTROL = 0x0180;// 0000 0001 1000 0000;
+	//REG_BG0_CONTROL = 0x0180;// 0000 0001 1000 0000;
 
 	memcpy((void*)bg_palette_mem, bgPal, BG_PAL_LEN);
 	uint16 tile[BG_TILES_LEN];
 	for (int i = 0; i < BG_TILES_LEN; ++i)
 	{
-		tile[i] = 0x0101; // Some color
+		tile[i] = 0x0202; // Some color
 	}
 	memcpy((void*)tile_mem[1], tile, BG_TILES_LEN);
 }
