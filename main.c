@@ -1,3 +1,4 @@
+
 #ifdef _MSC_VER
 #define PACK4
 #define ALIGN4
@@ -61,14 +62,14 @@ typedef tile_8bpp tile_block[256];
 #define object_palette_mem	((volatile rgb15*)(MEM_PAL + 0x200))
 #define bg_palette_mem		((volatile rgb15*)(MEM_PAL))
 
-#define BG_TILES_LEN SCREEN_HEIGHT * SCREEN_WIDTH / 16
-//#define BG_TILES_LEN 1
+#define BG_TILES_LEN SCREEN_HEIGHT * SCREEN_WIDTH
+//#define BG_TILES_LEN 2048 * 4
 #define BG_PAL_LEN 8
 
 const unsigned short bgPal[4] ALIGN4 =
 {
 	//0x4DA0,0x0000,0xFFFF,0x0000,
-	0xFFFF,0x0000,0xFFFF,0x0000,
+	0x1234,0x4DA0,0xFFFF,0x0000,
 };
 
 // Form a 16-bit BGR GBA color from 3 component vals
@@ -105,11 +106,14 @@ static inline void drawBg()
 	memcpy((void*)bg_palette_mem, bgPal, BG_PAL_LEN);
 
 	uint16 tile[BG_TILES_LEN];
+	int half = BG_TILES_LEN / 2;
 	for (int i = 0; i < BG_TILES_LEN; ++i)
 	{
-		tile[i] = 0x0202; // Some color
+		//tile[i] = i%2 ==0 ? 0x0003 : 0x0001; // Some color
+		tile[i] = i > half ? 0x0001 : 0x0003; // Some color
 	}
-	memcpy((void*)&tile_mem[0][0], tile, BG_TILES_LEN);
+	memcpy((void*)&tile_mem[0], tile, BG_TILES_LEN);
+	//memcpy((void*)&tile_mem[1], tile, BG_TILES_LEN);
 }
 
 inline void vsync()
@@ -126,13 +130,13 @@ int main()
 
 	// Create our sprites by writing their object attributes into OAM
 	// memory
-	volatile obj_attrs* paddle_attrs = &oam_mem[0];
+	volatile obj_attrs* car_attrs = &oam_mem[0];
     // 0010 0000 0000 0000
-	paddle_attrs->attr0 = 0x2000; 	// 8bpp tiles, SQUARE shape, y coord 00
+	car_attrs->attr0 = 0x2000; 	// 8bpp tiles, SQUARE shape, y coord 00
 	// 1000 00000 0000 0000
     //http://www.coranac.com/tonc/text/regobj.htm
-    paddle_attrs->attr1 = 0x8000; 	// 32x32 size when using the SQUARE shape
-	paddle_attrs->attr2 = 2;		// Start at 1st tile in tile block 4, use color palatte 0
+    car_attrs->attr1 = 0x8000; 	// 32x32 size when using the SQUARE shape
+	car_attrs->attr2 = 2;		// Start at 1st tile in tile block 4, use color palatte 0
 
 	// Init vars to keep track of the state of the apaddle and ball,
 	// and set their initial positions (by modifying thier attrs in OAM)
@@ -143,7 +147,7 @@ int main()
 	int player_x = 5;
 	int player_y = SCREEN_HEIGHT - player_height;
 
-	set_object_position(paddle_attrs, player_x, player_y);
+	set_object_position(car_attrs, player_x, player_y);
 
 	// Set the display parameters to enable objects, and use a 1D obj->tile mapping
 	// and bg 0
@@ -175,7 +179,7 @@ int main()
 		}
 		if (key_states & KEY_LEFT || key_states & KEY_RIGHT)
 		{
-			set_object_position(paddle_attrs, player_x, player_y);
+			set_object_position(car_attrs, player_x, player_y);
 		}
 	}
 
